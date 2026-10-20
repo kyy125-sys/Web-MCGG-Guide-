@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+*.log
+uploads/*
+!uploads/.gitkeep
+!uploads/heroes/
+!uploads/heroes/.gitkeep
+!uploads/commanders/
+!uploads/commanders/.gitkeep
+!uploads/synergies/
+!uploads/synergies/.gitkeep
+!uploads/misc/
+!uploads/misc/.gitkeep

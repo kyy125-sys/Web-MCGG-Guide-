@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("user")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lineups      Lineup[]
+}
+
+model Patch {
+  id           String        @id @default(cuid())
+  version      String        @unique
+  releaseDate  DateTime
+  isActive     Boolean       @default(false)
+  notes        String?
+  sources      String        @default("[]") // JSON string
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  heroes       Hero[]
+  commanders   Commander[]
+  synergies    Synergy[]
+  lineups      Lineup[]
+  tierEntries  TierEntry[]
+  patchChanges PatchChange[]
+}
+
+model PatchChange {
+  id          String  @id @default(cuid())
+  patchId     String
+  patch       Patch   @relation(fields: [patchId], references: [id], onDelete: Cascade)
+  entityType  String
+  entityId    String?
+  entityName  String
+  changeType  String
+  description String
+  before      String? // JSON string
+  after       String? // JSON string
+}
+
+model Hero {
+  id           String        @id @default(cuid())
+  name         String
+  imageUrl     String?
+  cost         Int
+  rarity       String
+  role         String        @default("[]")        // JSON string array
+  faction      String        @default("[]")        // JSON string array
+  stats        String        @default("{}")        // JSON string object
+  skills       String        @default("[]")        // JSON string array
+  equipments   String        @default("[]")        // JSON string array
+  positions    String        @default("[]")        // JSON string array
+  strengths    String        @default("[]")        // JSON string array
+  weaknesses   String        @default("[]")        // JSON string array
+  upgradeNotes String?
+  isActive     Boolean       @default(true)
+  verifiedAt   DateTime?
+  dataSource   String?
+  patchId      String?
+  patch        Patch?        @relation(fields: [patchId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  synergies    HeroSynergy[]
+  lineupHeroes LineupHero[]
+}
+
+model Commander {
+  id          String    @id @default(cuid())
+  name        String
+  imageUrl    String?
+  description String?
+  skill       String
+  skillLevels String    @default("[]") // JSON string array
+  playstyle   String?
+  strengths   String    @default("[]") // JSON string array
+  weaknesses  String    @default("[]") // JSON string array
+  isActive    Boolean   @default(true)
+  patchId     String?
+  patch       Patch?    @relation(fields: [patchId], references: [id])
+  dataSource  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lineups     Lineup[]
+}
+
+model Synergy {
+  id            String        @id @default(cuid())
+  name          String
+  iconUrl       String?
+  description   String
+  thresholds    String        @default("[]") // JSON string array
+  isActive      Boolean       @default(true)
+  patchId       String?
+  patch         Patch?        @relation(fields: [patchId], references: [id])
+  dataSource    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  heroSynergies HeroSynergy[]
+}
+
+model HeroSynergy {
+  heroId    String
+  synergyId String
+  hero      Hero    @relation(fields: [heroId], references: [id], onDelete: Cascade)
+  synergy   Synergy @relation(fields: [synergyId], references: [id], onDelete: Cascade)
+
+  @@id([heroId, synergyId])
+}
+
+model Lineup {
+  id              String       @id @default(cuid())
+  name            String
+  description     String?
+  tags            String       @default("[]") // JSON string array
+  isFavorite      Boolean      @default(false)
+  commanderId     String?
+  commander       Commander?   @relation(fields: [commanderId], references: [id])
+  patchId         String?
+  patch           Patch?       @relation(fields: [patchId], references: [id])
+  userId          String?
+  user            User?        @relation(fields: [userId], references: [id])
+  formationConfig String       @default("{}") // JSON string object
+  synergySnapshot String       @default("[]") // JSON string array
+  strategyNotes   String?
+  isPublic        Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  heroes          LineupHero[]
+}
+
+model LineupHero {
+  id       String @id @default(cuid())
+  lineupId String
+  heroId   String
+  lineup   Lineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  hero     Hero   @relation(fields: [heroId], references: [id])
+  posRow   Int    @default(0)
+  posCol   Int    @default(0)
+  star     Int    @default(1)
+  items    String @default("[]") // JSON string array
+}
+
+model TierEntry {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  tier       String
+  score      Float?
+  basis      String?
+  source     String?
+  patchId    String?
+  patch      Patch?   @relation(fields: [patchId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([patchId])
+}
